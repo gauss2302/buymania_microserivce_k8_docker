@@ -1,0 +1,77 @@
+.env
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+build/
+
+# Test binary, built with 'go test -c'
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.html
+
+# Go workspace file
+go.work
+
+# Dependencies
+vendor/
+
+# IDE-specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+.env
+
+# Binary output directories
+dist/
+target/
+
+# Debug files
+debug/
+
+# Log files
+*.log
+logs/
+
+# Local development environment
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Kubernetes
+kubeconfig
+.kube/
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Air live reload
+tmp/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Certificate files
+*.pem
+*.cert
+*.key
+
+# System Files
+.DS_Store
+Thumbs.db
