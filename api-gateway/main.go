@@ -7,6 +7,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -24,31 +25,35 @@ func createProxy(serviceConfig ServiceConfig) http.HandlerFunc {
 
 	proxy := httputil.NewSingleHostReverseProxy(serviceURL)
 
-	// Модифицируем Director для сохранения заголовков
+	// Modify the director
 	originalDirector := proxy.Director
 	proxy.Director = func(req *http.Request) {
+		log.Printf("Directing request: %s %s to %s", req.Method, req.URL.Path, serviceURL)
 		originalDirector(req)
-		// Добавляем заголовки для прокси
-		req.Header.Add("X-Forwarded-Host", req.Host)
-		req.Header.Add("X-Origin-Host", serviceURL.Host)
+		// Preserve the original path
+		if strings.HasPrefix(req.URL.Path, serviceConfig.Path) {
+			req.URL.Path = strings.TrimPrefix(req.URL.Path, serviceConfig.Path)
+			if req.URL.Path == "" {
+				req.URL.Path = "/"
+			}
+		}
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Добавляем CORS заголовки
+		// Single set of CORS headers
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, Authorization")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
 
-		log.Printf("Proxying request: %s %s to %s", r.Method, r.URL.Path, serviceURL.String())
+		log.Printf("API Gateway: proxying %s %s to %s", r.Method, r.URL.Path, serviceURL)
 		proxy.ServeHTTP(w, r)
 	}
 }
-
 func main() {
 	services := []ServiceConfig{
 		{

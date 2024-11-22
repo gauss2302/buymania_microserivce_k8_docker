@@ -3,6 +3,7 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -24,19 +25,24 @@ func NewProductHandler(usecase usecase.ProductUsecase) *ProductHandler {
 func (h *ProductHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Received request: %s %s", r.Method, r.URL.Path)
 
+	path := r.URL.Path
+	if strings.HasSuffix(path, "/") {
+		path = path[:len(path)-1]
+	}
+
 	switch {
-	case r.Method == http.MethodGet && r.URL.Path == "/products":
+	case r.Method == http.MethodPost && path == "/products":
+		log.Printf("Handling POST request to create product")
+		h.CreateProduct(w, r)
+	case r.Method == http.MethodGet && path == "/products":
 		log.Printf("Handling GET all products")
 		h.GetProducts(w, r)
-		return
-	case r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/products/"):
+	case r.Method == http.MethodGet && strings.HasPrefix(path, "/products/"):
 		log.Printf("Handling GET product by ID")
 		h.GetProduct(w, r)
-		return
-	// ... остальные case
 	default:
-		log.Printf("No handler for %s %s", r.Method, r.URL.Path)
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		log.Printf("No handler for %s %s (path after trim: %s)", r.Method, r.URL.Path, path)
+		http.Error(w, fmt.Sprintf("Method %s not allowed for path %s", r.Method, path), http.StatusMethodNotAllowed)
 	}
 }
 
