@@ -16,7 +16,7 @@ RUN go mod download
 COPY . .
 
 # Build the Go application
-RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o product-service ./cmd/api
+RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o product-service ./cmd/server
 
 # Use a minimal image for the final build
 FROM alpine:3.18
@@ -37,4 +37,4 @@ COPY --from=builder /app/migrations /app/migrations
 EXPOSE 8082
 
 # Start the Product service
-CMD ["/app/product-service"]
+CMD ["/app/product-service/cmd/server"]
