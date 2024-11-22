@@ -1,8 +1,8 @@
-CREATE TABLE IF NOT EXISTS products (
+CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    price DECIMAL(10, 2) NOT NULL,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -15,6 +15,8 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
-CREATE TRIGGER update_products_updated_at BEFORE
-UPDATE ON products FOR EACH ROW
+DROP TRIGGER IF EXISTS update_users_updated_at ON users;
+
+CREATE TRIGGER update_users_updated_at BEFORE
+UPDATE ON users FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column ();

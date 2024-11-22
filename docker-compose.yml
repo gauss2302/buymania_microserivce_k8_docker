@@ -10,6 +10,8 @@ services:
       - microservices-network
     depends_on:
       - product-service
+      - user-service
+      - payment-service
 
   product-service:
     image: gauss23/product-service:latest
@@ -17,7 +19,7 @@ services:
     ports:
       - "8082:8082"
     environment:
-      - DB_HOST=postgres
+      - DB_HOST=product-db
       - DB_PORT=5432
       - DB_USER=postgres
       - DB_PASSWORD=postgres123
@@ -25,15 +27,62 @@ services:
       - SERVER_PORT=8082
     env_file:
       - ./product-service/.env
+    volumes:
+      - ./product-service/migrations:/app/migrations
     networks:
       - microservices-network
     depends_on:
-      postgres:
+      product-db:
         condition: service_healthy
 
-  postgres:
+  user-service:
+    image: gauss23/user-service:latest
+    container_name: user-service
+    ports:
+      - "8083:8080"
+    environment:
+      - DB_HOST=user-db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres123
+      - DB_NAME=userdb
+      - SERVER_PORT=8080
+    env_file:
+      - ./user-service/.env
+    volumes:
+      - ./user-service/migrations:/app/migrations
+    networks:
+      - microservices-network
+    depends_on:
+      user-db:
+        condition: service_healthy
+
+  payment-service:
+    image: gauss23/payment-service:latest
+    container_name: payment-service
+    ports:
+      - "8081:8080"
+    environment:
+      - DB_HOST=payment-db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres123
+      - DB_NAME=paymentdb
+      - SERVER_PORT=8080
+    env_file:
+      - ./payment-service/.env
+    volumes:
+      - ./payment-service/migrations:/app/migrations
+    networks:
+      - microservices-network
+    depends_on:
+      payment-db:
+        condition: service_healthy
+
+  # Databases
+  product-db:
     image: postgres:15-alpine
-    container_name: postgres
+    container_name: product-db
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres123
@@ -41,8 +90,8 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./migrations:/docker-entrypoint-initdb.d
+      - product_db_data:/var/lib/postgresql/data
+      - ./product-service/migrations:/docker-entrypoint-initdb.d
     networks:
       - microservices-network
     healthcheck:
@@ -51,25 +100,51 @@ services:
       timeout: 5s
       retries: 5
 
-  user-service:
-    image: gauss23/user-service:latest
-    container_name: user-service
+  user-db:
+    image: postgres:15-alpine
+    container_name: user-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres123
+      - POSTGRES_DB=userdb
     ports:
-      - "8083:8080"
+      - "5433:5432"
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+      - ./user-service/migrations:/docker-entrypoint-initdb.d
     networks:
       - microservices-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
-  payment-service:
-    image: gauss23/payment-service:latest
-    container_name: payment-service
+  payment-db:
+    image: postgres:15-alpine
+    container_name: payment-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres123
+      - POSTGRES_DB=paymentdb
     ports:
-      - "8081:8080"
+      - "5434:5432"
+    volumes:
+      - payment_db_data:/var/lib/postgresql/data
+      - ./payment-service/migrations:/docker-entrypoint-initdb.d
     networks:
       - microservices-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 networks:
   microservices-network:
     driver: bridge
 
 volumes:
-  postgres_data:
+  product_db_data:
+  user_db_data:
+  payment_db_data:

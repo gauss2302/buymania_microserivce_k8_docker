@@ -58,12 +58,12 @@ func main() {
 		},
 		{
 			Name: "Payments",
-			URL:  getEnv("PAYMENT_SERVICE_URL", "http://payment-service:8080"),
+			URL:  getEnv("PAYMENT_SERVICE_URL", "http://payment-service:8081"),
 			Path: "/payment/",
 		},
 		{
 			Name: "Users",
-			URL:  getEnv("USER_SERVICE_URL", "http://user-service:8080"),
+			URL:  getEnv("USER_SERVICE_URL", "http://user-service:8083"),
 			Path: "/users/",
 		},
 	}

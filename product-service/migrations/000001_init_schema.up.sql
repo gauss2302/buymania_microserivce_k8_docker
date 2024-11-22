@@ -15,6 +15,8 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
+DROP TRIGGER IF EXISTS update_products_updated_at ON products;
+
 CREATE TRIGGER update_products_updated_at BEFORE
 UPDATE ON products FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column ();

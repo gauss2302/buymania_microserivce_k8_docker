@@ -1,3 +1,4 @@
+# product-service/Dockerfile
 FROM golang:1.23-alpine AS builder
 
 # Install required packages
@@ -15,8 +16,8 @@ RUN go mod download
 # Copy the source code
 COPY . .
 
-# Build the Go application
-RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o product-service ./cmd/server
+# Build the Go application (путь изменен согласно вашей структуре)
+RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o product-service ./cmd/server/main.go
 
 # Use a minimal image for the final build
 FROM alpine:3.18
@@ -28,13 +29,14 @@ RUN apk add --no-cache ca-certificates
 WORKDIR /app
 
 # Copy the built binary from the previous stage
-COPY --from=builder /app/product-service /app/product-service
+COPY --from=builder /app/product-service .
 
 # Copy migrations if needed
 COPY --from=builder /app/migrations /app/migrations
+
 
 # Expose the port the service will run on
 EXPOSE 8082
 
 # Start the Product service
-CMD ["/app/product-service/cmd/server"]
+CMD ["./product-service"]
