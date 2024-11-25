@@ -7,7 +7,6 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -25,63 +24,65 @@ func createProxy(serviceConfig ServiceConfig) http.HandlerFunc {
 
 	proxy := httputil.NewSingleHostReverseProxy(serviceURL)
 
-	// Modify the director
-	originalDirector := proxy.Director
 	proxy.Director = func(req *http.Request) {
-		log.Printf("Directing request: %s %s to %s", req.Method, req.URL.Path, serviceURL)
-		originalDirector(req)
+		log.Printf("Before proxy - Method: %s, URL: %s", req.Method, req.URL.String())
+
 		// Preserve the original path
-		if strings.HasPrefix(req.URL.Path, serviceConfig.Path) {
-			req.URL.Path = strings.TrimPrefix(req.URL.Path, serviceConfig.Path)
-			if req.URL.Path == "" {
-				req.URL.Path = "/"
-			}
-		}
+		originalPath := req.URL.Path
+
+		req.URL.Scheme = serviceURL.Scheme
+		req.URL.Host = serviceURL.Host
+
+		// Keep the same path
+		req.URL.Path = originalPath
+
+		log.Printf("After proxy - Forwarding to: %s%s", req.URL.Host, req.URL.Path)
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		// Single set of CORS headers
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		log.Printf("Gateway received: %s %s", r.Method, r.URL.Path)
 
-		if r.Method == "OPTIONS" {
-			w.WriteHeader(http.StatusOK)
+		// Add CORS headers
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+		// Handle preflight request
+		if r.Method == http.MethodOptions {
 			return
 		}
 
-		log.Printf("API Gateway: proxying %s %s to %s", r.Method, r.URL.Path, serviceURL)
 		proxy.ServeHTTP(w, r)
 	}
 }
+
 func main() {
 	services := []ServiceConfig{
 		{
 			Name: "Products",
-			URL:  getEnv("PRODUCT_SERVICE_URL", "http://product-service:8082"),
-			Path: "/products/",
+			URL:  getEnv("PRODUCT_SERVICE_URL", "http://product-service:8080"),
+			Path: "/products",
 		},
 		{
 			Name: "Payments",
 			URL:  getEnv("PAYMENT_SERVICE_URL", "http://payment-service:8081"),
-			Path: "/payment/",
+			Path: "/payment",
 		},
 		{
 			Name: "Users",
 			URL:  getEnv("USER_SERVICE_URL", "http://user-service:8083"),
-			Path: "/users/",
+			Path: "/users",
 		},
 	}
 
 	// Set up routes for each service
 	for _, service := range services {
-		log.Printf("Registering handler for %s at path: %s", service.Name, service.Path)
 		path := service.Path
 		handler := createProxy(service)
 
-		// Регистрируем обработчики и для пути со слешем, и без
-		http.Handle(strings.TrimSuffix(path, "/"), handler)
+		// Register routes
 		http.Handle(path, handler)
+		http.Handle(path+"/", handler)
 	}
 
 	// Health check endpoint

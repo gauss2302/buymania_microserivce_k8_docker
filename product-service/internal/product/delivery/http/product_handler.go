@@ -1,9 +1,7 @@
-// internal/product/delivery/http/product_handler.go
 package http
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -21,28 +19,42 @@ func NewProductHandler(usecase usecase.ProductUsecase) *ProductHandler {
 	return &ProductHandler{usecase: usecase}
 }
 
-// internal/product/delivery/http/product_handler.go
 func (h *ProductHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Received request: %s %s", r.Method, r.URL.Path)
+	// Add CORS headers
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
-	path := r.URL.Path
-	if strings.HasSuffix(path, "/") {
-		path = path[:len(path)-1]
+	// Handle preflight request
+	if r.Method == http.MethodOptions {
+		return
 	}
 
-	switch {
-	case r.Method == http.MethodPost && path == "/products":
-		log.Printf("Handling POST request to create product")
-		h.CreateProduct(w, r)
-	case r.Method == http.MethodGet && path == "/products":
-		log.Printf("Handling GET all products")
-		h.GetProducts(w, r)
-	case r.Method == http.MethodGet && strings.HasPrefix(path, "/products/"):
-		log.Printf("Handling GET product by ID")
-		h.GetProduct(w, r)
+	log.Printf("Product service received: %s %s", r.Method, r.URL.Path)
+
+	// Check the method
+	switch r.Method {
+	case http.MethodPost:
+		if strings.HasSuffix(r.URL.Path, "/products/") || strings.HasSuffix(r.URL.Path, "/products") {
+			log.Printf("Handling POST request for path: %s", r.URL.Path)
+			h.CreateProduct(w, r)
+			return
+		}
+
+	case http.MethodGet:
+		// For GET requests, check the path
+		if strings.HasSuffix(r.URL.Path, "/products/") || strings.HasSuffix(r.URL.Path, "/products") {
+			h.GetProducts(w, r)
+			return
+		}
+		if strings.HasPrefix(r.URL.Path, "/products/") {
+			h.GetProduct(w, r)
+			return
+		}
+
 	default:
-		log.Printf("No handler for %s %s (path after trim: %s)", r.Method, r.URL.Path, path)
-		http.Error(w, fmt.Sprintf("Method %s not allowed for path %s", r.Method, path), http.StatusMethodNotAllowed)
+		log.Printf("Method %s not allowed for path: %s", r.Method, r.URL.Path)
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
