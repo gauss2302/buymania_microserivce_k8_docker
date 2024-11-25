@@ -59,7 +59,7 @@ func main() {
 		{
 			Name: "Products",
 			URL:  getEnv("PRODUCT_SERVICE_URL", "http://product-service:8082"),
-			Path: "/products",
+			Path: "/products/",
 		},
 		{
 			Name: "Payments",
@@ -75,13 +75,12 @@ func main() {
 
 	// Set up routes for each service
 	for _, service := range services {
+		log.Printf("Registering handler for %s at path: %s", service.Name, service.Path)
 		path := service.Path
 		handler := createProxy(service)
 
-		log.Printf("Registering handler for %s at path: %s", service.Name, path)
-
-		// Регистрируем и для корневого пути, и для путей с ID
-		http.Handle(path+"/", handler)
+		// Регистрируем обработчики и для пути со слешем, и без
+		http.Handle(strings.TrimSuffix(path, "/"), handler)
 		http.Handle(path, handler)
 	}
 
