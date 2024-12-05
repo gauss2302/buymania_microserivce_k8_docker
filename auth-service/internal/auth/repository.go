@@ -7,7 +7,6 @@ import (
 
 type Repository interface {
 	StoreToken(userID int, token string, expiration time.Duration) error
-	//GetToken(token string) (*entity)
 	GetToken(token string) (*entity.TokenDetails, error)
 	DeleteToken(token string) error
 }
