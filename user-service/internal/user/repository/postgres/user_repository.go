@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/gauss2302/microtest/internal/entity"
+	"github.com/gauss2302/microtest/user-service/internal/entity"
 )
 
 type UserRepository struct {

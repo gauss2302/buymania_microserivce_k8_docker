@@ -1,6 +1,6 @@
 package repository
 
-import "github.com/gauss2302/microtest/internal/entity"
+import "github.com/gauss2302/microtest/user-service/internal/entity"
 
 type UserRepository interface {
 	CreateUser(user *entity.User) (*entity.User, error)

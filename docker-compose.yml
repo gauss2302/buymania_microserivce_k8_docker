@@ -78,6 +78,32 @@ services:
     depends_on:
       payment-db:
         condition: service_healthy
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    image: gauss23/auth-service:latest
+    container_name: auth-service
+    ports:
+      - "8084:8080"
+    environment:
+      - SERVER_PORT=8080
+      - MEMCACHED_HOST=memcached
+      - MEMCACHED_PORT=11211
+      - TOKEN_EXPIRATION=24h
+      - USER_SERVICE_URL=http://user-service:8080
+    networks:
+      - microservices-network
+    depends_on:
+      - memcached
+      - user-service
+  memcached:
+    image: memcached:1.6-alpine
+    container_name: memcached
+    ports:
+      - "11211:11211"
+    networks:
+      - microservices-network
 
   # Databases
   product-db:
@@ -88,7 +114,7 @@ services:
       - POSTGRES_PASSWORD=postgres123
       - POSTGRES_DB=productdb
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - product_db_data:/var/lib/postgresql/data
       - ./product-service/migrations:/docker-entrypoint-initdb.d
@@ -108,7 +134,7 @@ services:
       - POSTGRES_PASSWORD=postgres123
       - POSTGRES_DB=userdb
     ports:
-      - "5433:5432"
+      - "5434:5432"
     volumes:
       - user_db_data:/var/lib/postgresql/data
       - ./user-service/migrations:/docker-entrypoint-initdb.d
@@ -128,7 +154,7 @@ services:
       - POSTGRES_PASSWORD=postgres123
       - POSTGRES_DB=paymentdb
     ports:
-      - "5434:5432"
+      - "5435:5432"
     volumes:
       - payment_db_data:/var/lib/postgresql/data
       - ./payment-service/migrations:/docker-entrypoint-initdb.d
@@ -148,3 +174,4 @@ volumes:
   product_db_data:
   user_db_data:
   payment_db_data:
+

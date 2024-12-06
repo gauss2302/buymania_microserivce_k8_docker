@@ -2,12 +2,12 @@ package memcached
 
 import "github.com/bradfitz/gomemcache/memcache"
 
-type Client struct {
-	client *memcache.Client
+type MemcachedWrapper struct {
+	Client *memcache.Client // Make the internal client public
 }
 
-func NewClient(port, host string) *Client {
-	return &Client{
-		client: memcache.New(host + ":" + port),
+func NewClient(host, port string) *MemcachedWrapper {
+	return &MemcachedWrapper{
+		Client: memcache.New(host + ":" + port),
 	}
 }

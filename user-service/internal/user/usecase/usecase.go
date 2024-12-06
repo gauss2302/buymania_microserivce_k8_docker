@@ -1,6 +1,7 @@
+// internal/user/usecase/interface.go
 package usecase
 
-import "github.com/gauss2302/microtest/internal/entity"
+import "github.com/gauss2302/microtest/user-service/internal/entity"
 
 type UserUsecase interface {
 	CreateUser(req *entity.CreateUserRequest) (*entity.User, error)
